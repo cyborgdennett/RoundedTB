@@ -52,7 +52,8 @@ try {
         if ((Get-CanonicalPath $actualPath) -ne (Get-CanonicalPath $expectedPath)) { throw "Startup points to '$actualPath'; expected '$expectedPath'." }
         Write-Output "Installation/upgrade $attempt passed."
     }
-    Run-Setup (Join-Path $destination 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'
+    $uninstallLog = Join-Path $logDirectory 'uninstall.log'
+    Run-Setup (Join-Path $destination 'unins000.exe') "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=`"$uninstallLog`""
     if (Test-Path (Join-Path $destination 'RoundedTB.exe')) { throw 'Uninstall left the app executable.' }
     if (Test-Path $uninstallKey) { throw 'Uninstall left the Apps entry.' }
     try { $null = $folder.GetTask($taskName); throw 'Uninstall left the startup task.' } catch {

@@ -32,10 +32,21 @@ jobs:
           name: rtb-artifacts
           path: artifacts/RoundedTB/
       - name: Install Inno Setup compiler
-        run: choco install innosetup --version=6.7.3 --yes --no-progress
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Join-Path $env:RUNNER_TEMP 'innosetup-6.7.3.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe' -OutFile $setup
+          $signature = Get-AuthenticodeSignature $setup
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notlike '*Pyrsys*') {
+            throw 'The Inno Setup compiler signature is invalid.'
+          }
+          $compilerDirectory = Join-Path $env:RUNNER_TEMP 'InnoSetup'
+          $process = Start-Process $setup -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=`"$compilerDirectory`"" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Compiler installation failed: $($process.ExitCode)" }
       - name: Build installer
         shell: powershell
-        run: .\scripts\build-installer.ps1
+        run: .\scripts\build-installer.ps1 -Compiler "$env:RUNNER_TEMP\InnoSetup\ISCC.exe"
       - name: Test installer and uninstaller
         shell: powershell
         run: .\RoundedTB.Tests\PowerShell\Test-Installer.ps1

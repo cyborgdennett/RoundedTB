@@ -30,7 +30,9 @@ try {
         }
         if (!(Test-Path $uninstallKey)) { throw 'Missing Apps uninstall entry.' }
         $task = $folder.GetTask($taskName)
-        if ($task.Definition.Actions.Item(1).Path -ne (Join-Path $destination 'RoundedTB.exe')) { throw 'Startup points to the wrong executable.' }
+        $actualPath = $task.Definition.Actions.Item(1).Path
+        $expectedPath = Join-Path $destination 'RoundedTB.exe'
+        if ($actualPath -ne $expectedPath) { throw "Startup points to '$actualPath'; expected '$expectedPath'." }
         Write-Output "Installation/upgrade $attempt passed."
     }
     Run-Setup (Join-Path $destination 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'

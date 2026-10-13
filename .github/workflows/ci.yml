@@ -50,6 +50,12 @@ jobs:
       - name: Test installer and uninstaller
         shell: powershell
         run: .\RoundedTB.Tests\PowerShell\Test-Installer.ps1
+      - name: Upload installer test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-test-logs
+          path: ${{ runner.temp }}/RoundedTB Installer Test *-install-*.log
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:

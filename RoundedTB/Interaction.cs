@@ -1,9 +1,8 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Windows;
 using System.Threading;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -13,13 +12,13 @@ namespace RoundedTB
     public class Interaction
     {
         public MainWindow mw;
-        string m = "";
+        private static readonly object logLock = new object();
 
-        public Interaction()
+        public Interaction(MainWindow window)
         {
             try
             {
-                mw = (MainWindow)Application.Current.MainWindow;
+                mw = window;
             }
             catch (Exception)
             {
@@ -29,9 +28,7 @@ namespace RoundedTB
 
         public Types.Settings ReadJSON()
         {
-            string jsonSettings = File.ReadAllText(mw.configPath);
-            Types.Settings settings = JsonConvert.DeserializeObject<Types.Settings>(jsonSettings);
-            return settings;
+            return SettingsPersistence.Read(mw.configPath, AddLog);
         }
 
         public bool IsWindows11()
@@ -46,13 +43,12 @@ namespace RoundedTB
 
         public void WriteJSON()
         {
-            File.Create(mw.configPath).Close();
-            File.WriteAllText(mw.configPath, JsonConvert.SerializeObject(mw.activeSettings, Formatting.Indented));
+            SettingsPersistence.Write(mw.configPath, mw.activeSettings);
         }
 
         public void FileSystem()
         {
-            File.Create(mw.logPath).Close();
+            if (!File.Exists(mw.logPath)) File.WriteAllText(mw.logPath, string.Empty);
             if (!File.Exists(mw.configPath))
             {
                 if (mw.isWindows11)
@@ -67,7 +63,6 @@ namespace RoundedTB
                         IsCentred = false,
                         IsWindows11 = true,
                         ShowTray = false,
-                        CompositionCompat = false,
                         IsNotFirstLaunch = false,
                         FillOnMaximise = true,
                         FillOnTaskSwitch = true,
@@ -87,7 +82,6 @@ namespace RoundedTB
                         IsCentred = false,
                         IsWindows11 = false,
                         ShowTray = false,
-                        CompositionCompat = false,
                         IsNotFirstLaunch = false,
                         FillOnMaximise = true,
                         FillOnTaskSwitch = false,
@@ -97,10 +91,6 @@ namespace RoundedTB
                 }
                 
                 WriteJSON(); // butts - Missy Quarry, 2020
-            }
-            if (File.ReadAllText(mw.configPath) == "" || File.ReadAllText(mw.configPath) == null)
-            {
-                WriteJSON(); // Initialises empty file
             }
 
         }
@@ -119,29 +109,19 @@ namespace RoundedTB
 
         public void AddLog(string message)
         {
-            //m = $"[{DateTime.Now}] {message}\n";
-            //File.AppendAllText(mw.logPath, m);
-        }
-
-        public static bool IsTranslucentTBRunning()
-        {
-            Mutex mutex = null;
             try
             {
-                return Mutex.TryOpenExisting("344635E9-9AE4-4E60-B128-D53E25AB70A7", out mutex);
+                lock (logLock)
+                {
+                    if (File.Exists(mw.logPath) && new FileInfo(mw.logPath).Length > 2 * 1024 * 1024)
+                        File.Move(mw.logPath, mw.logPath + ".previous", true);
+                    File.AppendAllText(mw.logPath, $"[{DateTime.Now:O}] {message}{Environment.NewLine}");
+                }
             }
-            finally
-            {
-                mutex?.Dispose();
-            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
-        // Request that TranslucentTB forefully refesh the taskbar
-        public static IntPtr UpdateTranslucentTB(IntPtr taskbarHwnd)
-        {
-            return LocalPInvoke.SendMessage(LocalPInvoke.FindWindow("TTB_WorkerWindow", "TTB_WorkerWindow"), LocalPInvoke.RegisterWindowMessage("TTB_ForceRefreshTaskbar"), 0, taskbarHwnd);
-        }
-        
         // Attempt to forcefully refresh the taskbar
         public static void UpdateLegacyTB(IntPtr taskbarHwnd)
         {
@@ -177,8 +157,21 @@ namespace RoundedTB
         // (this is a joke to annoy sylly)
         }
 
-        public IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        public IntPtr HwndHook(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            if (msg == Program.ShowSettingsMessage && Program.ShowSettingsMessage != 0)
+            {
+                if (!mw.IsVisible) mw.ShowMenuItem_Click(null, null);
+                mw.Activate();
+                handled = true;
+                return IntPtr.Zero;
+            }
+            if (mw.ShellHookMessage != 0 && msg == mw.ShellHookMessage)
+            {
+                int shellCode = unchecked((int)wParam.ToInt64());
+                if (shellCode != AppAttentionReveal.Flash || LocalPInvoke.GetForegroundWindow() != lParam)
+                    mw.appAttentionReveal.Notify(shellCode, lParam, mw.activeSettings);
+            }
             const int WM_HOTKEY = 0x0312;
 
             switch (msg)
@@ -190,17 +183,9 @@ namespace RoundedTB
                         case 9000:
                             int vkey = ((int)lParam >> 16) & 0xFFFF;
                             Debug.WriteLine(vkey);
-                            if (vkey == 0x71)
+                            if (vkey == 0x71 && !mw.activeSettings.IsWindowsDefault)
                             {
-                                if (mw.showTrayCheckBox.IsChecked == true)
-                                {
-                                    mw.showTrayCheckBox.IsChecked = false;
-                                }
-                                else
-                                {
-                                    mw.showTrayCheckBox.IsChecked = true;
-                                }
-                                mw.ApplyButton_Click(null, null);
+                                mw.ToggleTrayVisibility();
                             }
                             handled = true;
                             break;
@@ -212,7 +197,7 @@ namespace RoundedTB
 
         public static bool IsAutoHideEnabled()
         {
-            return Math.Abs(SystemParameters.PrimaryScreenHeight - SystemParameters.WorkArea.Height) > 0;
+            return MonitorStuff.GetDisplays().Exists(display => display.MonitorArea.Bottom != display.WorkArea.Bottom);
         }
 
         public bool IsTaskbarVisibleOnMonitor(LocalPInvoke.RECT tbRectP, LocalPInvoke.RECT monitorRectP)

@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RoundedTB.App" RequestedThemeVariant="Default">
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Button.selected">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Style>
+  </Application.Styles>
+</Application>

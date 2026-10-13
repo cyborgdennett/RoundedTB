@@ -1,0 +1,427 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="RoundedTB.MainWindow" Icon="/RoundedTB.ico" Title="RoundedTB" Width="1200" Height="680" MinWidth="620" MinHeight="480" Background="{DynamicResource SettingsPageBrush}" FontFamily="Segoe UI Variable, Segoe UI, $Default" FontSize="14">
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SettingsPageBrush" Color="#F3F3F3" />
+          <SolidColorBrush x:Key="SettingsCardBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SettingsBorderBrush" Color="#14000000" />
+          <SolidColorBrush x:Key="SettingsInputBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SettingsInputBorderBrush" Color="#52000000" />
+          <SolidColorBrush x:Key="SettingsSecondaryBrush" Color="#606060" />
+          <SolidColorBrush x:Key="SettingsHoverBrush" Color="#09000000" />
+          <SolidColorBrush x:Key="SettingsSelectionBrush" Color="#10000000" />
+          <SolidColorBrush x:Key="SettingsAccentTextBrush" Color="White" />
+          <SolidColorBrush x:Key="SettingsPreviewBrush" Color="#E8EBEF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SettingsPageBrush" Color="#202020" />
+          <SolidColorBrush x:Key="SettingsCardBrush" Color="#2B2B2B" />
+          <SolidColorBrush x:Key="SettingsBorderBrush" Color="#12FFFFFF" />
+          <SolidColorBrush x:Key="SettingsInputBrush" Color="#343434" />
+          <SolidColorBrush x:Key="SettingsInputBorderBrush" Color="#70FFFFFF" />
+          <SolidColorBrush x:Key="SettingsSecondaryBrush" Color="#C5C5C5" />
+          <SolidColorBrush x:Key="SettingsHoverBrush" Color="#0FFFFFFF" />
+          <SolidColorBrush x:Key="SettingsSelectionBrush" Color="#18FFFFFF" />
+          <SolidColorBrush x:Key="SettingsAccentTextBrush" Color="White" />
+          <SolidColorBrush x:Key="SettingsPreviewBrush" Color="#25282C" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="NumericUpDown">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="6,4" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ ButtonSpinner">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="NumericField" Background="{DynamicResource SettingsInputBrush}" BorderBrush="{DynamicResource SettingsInputBorderBrush}" BorderThickness="1" CornerRadius="4">
+          <Grid ColumnDefinitions="*,24">
+            <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+            <Grid Grid.Column="1" RowDefinitions="*,*" IsVisible="{TemplateBinding ShowButtonSpinner}" Margin="0,2,2,2">
+              <RepeatButton Name="PART_IncreaseButton" Grid.Row="0" Content="▴" Padding="0" MinWidth="0" MinHeight="0" FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Focusable="False" Background="Transparent" BorderThickness="0" CornerRadius="3" />
+              <RepeatButton Name="PART_DecreaseButton" Grid.Row="1" Content="▾" Padding="0" MinWidth="0" MinHeight="0" FontSize="12" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Focusable="False" Background="Transparent" BorderThickness="0" CornerRadius="3" />
+            </Grid>
+          </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="NumericUpDown /template/ TextBox">
+      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="MinWidth" Value="0" />
+    </Style>
+    <Style Selector="NumericUpDown:focus-within /template/ ButtonSpinner /template/ Border#NumericField">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Button.selected">
+      <Setter Property="Foreground" Value="{DynamicResource SettingsAccentTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Style>
+    <Style Selector="Border.setting-row">
+      <Setter Property="Background" Value="{DynamicResource SettingsInputBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SettingsBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.page-title">
+      <Setter Property="FontSize" Value="24" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.section-title">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.field-label">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.help">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Foreground" Value="{DynamicResource SettingsSecondaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="LineHeight" Value="21" />
+    </Style>
+    <Style Selector="Border.settings-card">
+      <Setter Property="Background" Value="{DynamicResource SettingsCardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SettingsBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="20" />
+    </Style>
+    <Style Selector="Button.section-link">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="Button.section-link:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SettingsHoverBrush}" />
+    </Style>
+    <Style Selector="Button.section-link.nav-selected">
+      <Setter Property="Background" Value="{DynamicResource SettingsSelectionBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+      <Setter Property="BorderThickness" Value="3,0,0,0" />
+      <Setter Property="Padding" Value="9,10,12,10" />
+    </Style>
+    <Style Selector="TextBlock.nav-label">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="TextBlock.live-note">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource SettingsSecondaryBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.apply-note">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+  <Grid x:Name="MainGrid" Margin="24" RowDefinitions="Auto,*" RowSpacing="20">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+    <StackPanel Spacing="4">
+      <TextBlock Text="RoundedTB" FontSize="28" FontWeight="SemiBold" />
+    </StackPanel>
+      <Button Grid.Column="1" x:Name="restoreWindowsButton" Content="Restore Taskbar" Click="RestoreWindows_Click" VerticalAlignment="Top" MinWidth="150" />
+    </Grid>
+    <Grid x:Name="settingsContentGrid" ColumnDefinitions="165,*" ColumnSpacing="20" Grid.Row="1">
+      <StackPanel x:Name="settingsNavigation" Spacing="4">
+        <Button Classes="section-link nav-selected" Click="SettingsSection_Click" CommandParameter="generalSection" HorizontalAlignment="Stretch" x:Name="generalNavigationButton">
+          <Grid ColumnDefinitions="20,*" ColumnSpacing="12">
+            <Path Data="M2,3 H18 V14 H2 Z M7,18 H13 M10,14 V18" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.4" Width="20" Height="20" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Areas" Classes="nav-label" VerticalAlignment="Center" />
+          </Grid>
+        </Button>
+        <Button Classes="section-link" Click="SettingsSection_Click" CommandParameter="shapeSpacingCard" HorizontalAlignment="Stretch" x:Name="appearanceNavigationButton">
+          <Grid ColumnDefinitions="20,*" ColumnSpacing="12">
+            <Path Data="M3,3 H17 V17 H3 Z M7,3 V17 M3,7 H17" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.4" Width="20" Height="20" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Shape &amp; hover" Classes="nav-label" VerticalAlignment="Center" />
+          </Grid>
+        </Button>
+        <Button Classes="section-link" Click="SettingsSection_Click" CommandParameter="notificationsSection" HorizontalAlignment="Stretch" x:Name="notificationsNavigationButton">
+          <Grid ColumnDefinitions="20,*" ColumnSpacing="12">
+            <Path Data="M3,16 H17 V19 H3 Z M6,11 L10,7 L14,11 M10,7 V15" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.4" Width="20" Height="20" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Taskbar auto-hide" Classes="nav-label" VerticalAlignment="Center" />
+          </Grid>
+        </Button>
+        <Button Classes="section-link" Click="SettingsSection_Click" CommandParameter="windowsSection" HorizontalAlignment="Stretch" x:Name="windowsNavigationButton">
+          <Grid ColumnDefinitions="20,*" ColumnSpacing="12">
+            <Path Data="M10,1 V9 M5,4 A8,8 0 1 0 15,4" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.4" Width="20" Height="20" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Startup" Classes="nav-label" VerticalAlignment="Center" />
+          </Grid>
+        </Button>
+        <Button Classes="section-link" Click="SettingsSection_Click" CommandParameter="advancedSection" HorizontalAlignment="Stretch" x:Name="advancedNavigationButton">
+          <Grid ColumnDefinitions="20,*" ColumnSpacing="12">
+            <Path Data="M2,4 H18 M2,10 H18 M2,16 H18 M6,2 V6 M14,8 V12 M8,14 V18" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.4" Width="20" Height="20" Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Advanced" Classes="nav-label" VerticalAlignment="Center" />
+          </Grid>
+        </Button>
+      </StackPanel>
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled" Grid.Column="1" x:Name="settingsScrollViewer">
+        <StackPanel Spacing="20" Margin="0,8,8,20">
+          <StackPanel Spacing="20" Margin="0" x:Name="generalSection">
+            <Grid x:Name="monitorSettingsGrid" ColumnDefinitions="400,*" RowDefinitions="Auto,Auto" ColumnSpacing="20" RowSpacing="16">
+            <StackPanel Spacing="6" HorizontalAlignment="Left">
+              <Border x:Name="monitorPreview" Width="400" Height="250" HorizontalAlignment="Left" Background="{DynamicResource SettingsPreviewBrush}" CornerRadius="8" BorderThickness="2" BorderBrush="{DynamicResource SettingsInputBorderBrush}" ClipToBounds="True">
+                <Grid RowDefinitions="*,Auto">
+                  <Border x:Name="previewReclaimedSpace" Grid.Row="1" Background="#355987" IsVisible="False" ToolTip.Tip="Maximized windows can use the space around and between these taskbar areas." />
+                  <Border x:Name="previewTaskbarBorder" Grid.Row="1" Background="#30000000" Padding="8,6">
+                    <Grid ColumnDefinitions="*,1.5*,*" ColumnSpacing="8">
+                      <Button x:Name="widgetsRectStandIn" Grid.Column="0" Content="Widgets" Height="40" HorizontalAlignment="Stretch" Click="widgetsRectStandIn_Click" MinWidth="100" CornerRadius="6" ToolTip.Tip="Customize widgets" />
+                      <Button x:Name="taskbarRectStandIn" Grid.Column="1" Content="Taskbar" Height="40" HorizontalAlignment="Stretch" Click="taskbarRectStandIn_Click" MinWidth="100" CornerRadius="6" ToolTip.Tip="Customize Start and app icons" />
+                      <Button x:Name="trayRectStandIn" Grid.Column="2" Content="Tray" Height="40" HorizontalAlignment="Stretch" Click="trayRectStandIn_Click" MinWidth="100" CornerRadius="6" ToolTip.Tip="Customize the clock and status icons" />
+                    </Grid>
+                  </Border>
+                </Grid>
+              </Border>
+              <Border Width="48" Height="6" CornerRadius="2" Background="{DynamicResource SettingsInputBorderBrush}" HorizontalAlignment="Center" />
+            </StackPanel>
+            <StackPanel x:Name="monitorSettingsControls" Grid.Column="1" Spacing="8" VerticalAlignment="Top" Margin="0,8,0,0">
+              <Border Classes="setting-row">
+                <CheckBox x:Name="enableRoundedTaskbarCheckBox" IsCheckedChanged="EnableRoundedTaskbar_Changed">
+                <TextBlock Text="Enable Rounded Taskbar" TextWrapping="Wrap" />
+              </CheckBox>
+              </Border>
+              <Border Classes="setting-row">
+              <StackPanel Spacing="4">
+                <CheckBox x:Name="expandWorkAreaCheckBox" ToolTip.Tip="Lets maximized windows extend behind the taskbar. Experimental and unstable.">
+                  <TextBlock Text="Use taskbar space while Maximized" TextWrapping="Wrap" />
+                </CheckBox>
+                <TextBlock Text="Experimental · unstable" Classes="help" Margin="28,0,0,0" />
+              </StackPanel>
+              </Border>
+              <Border Classes="setting-row">
+                <CheckBox x:Name="fillAltTabCheckBox">
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="Show Full Taskbar During Window Selection " />
+                  <InlineUIContainer>
+                    <Border Width="18" Height="18" CornerRadius="9" BorderBrush="#808080" BorderThickness="1" ToolTip.Tip="Alt+Tab and Win+Tab">
+                      <TextBlock Text="i" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" />
+                    </Border>
+                  </InlineUIContainer>
+                </TextBlock>
+              </CheckBox>
+              </Border>
+              <Border Classes="setting-row">
+                <CheckBox x:Name="fillMaximisedCheckBox">
+                <TextBlock Text="Show Full Taskbar While Maximized" TextWrapping="Wrap" />
+              </CheckBox>
+              </Border>
+              <TextBlock x:Name="restorationHeading" Text="Restore the full taskbar" Classes="help" IsVisible="False" />
+            </StackPanel>
+            </Grid>
+            <StackPanel IsVisible="False">
+              <CheckBox x:Name="dynamicCheckBox" />
+              <Button x:Name="splitHelpButton" Click="splitHelpButton_Click" />
+              <CheckBox x:Name="centredCheckBox" />
+            </StackPanel>
+            <Grid x:Name="areaSettingsGrid" ColumnDefinitions="Auto,0" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="16">
+            <Border x:Name="areaVisibilityCard" Classes="settings-card" HorizontalAlignment="Left" MaxWidth="346">
+              <StackPanel Spacing="12">
+                <TextBlock x:Name="visibilityEditingLabel" Text="Taskbar" Classes="section-title" />
+                <TextBlock Text="Normal windows" Classes="field-label" />
+                <Grid x:Name="visibilityButtonsGrid" ColumnDefinitions="96,96,96" HorizontalAlignment="Left" ColumnSpacing="8">
+                  <Button x:Name="visibilityAlwaysButton" Padding="4,6" FontSize="13" Content="Always visible" Click="VisibilityButton_Click" CommandParameter="0" HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="1" x:Name="visibilityHoverButton" Padding="4,6" FontSize="13" Content="Auto-hide" Click="VisibilityButton_Click" CommandParameter="1" HorizontalAlignment="Stretch" ToolTip.Tip="Reveals this area on hover." />
+                  <Button Grid.Column="2" x:Name="visibilityHiddenButton" Padding="4,6" FontSize="13" Content="Hidden" Click="VisibilityButton_Click" CommandParameter="2" HorizontalAlignment="Stretch" ToolTip.Tip="Keeps this area hidden." />
+                </Grid>
+                <TextBlock Text="Maximized windows" Classes="field-label" />
+                <Grid x:Name="maximizedVisibilityButtonsGrid" ColumnDefinitions="96,96,96" HorizontalAlignment="Left" ColumnSpacing="8" ToolTip.Tip="Show Full Taskbar While Maximized overrides these choices.">
+                  <Button x:Name="maximizedVisibilityAlwaysButton" Padding="4,6" FontSize="13" Content="Always visible" Click="MaximizedVisibilityButton_Click" CommandParameter="0" HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="1" x:Name="maximizedVisibilityHoverButton" Padding="4,6" FontSize="13" Content="Auto-hide" Click="MaximizedVisibilityButton_Click" CommandParameter="1" HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="2" x:Name="maximizedVisibilityHiddenButton" Padding="4,6" FontSize="13" Content="Hidden" Click="MaximizedVisibilityButton_Click" CommandParameter="2" HorizontalAlignment="Stretch" />
+                </Grid>
+                <StackPanel IsVisible="False">
+                  <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" SelectionChanged="VisibilityMode_Changed" x:Name="appVisibilityCombo" ToolTip.Tip="Auto-hide reveals this area on hover.">
+                    <ComboBoxItem>Always visible</ComboBoxItem>
+                    <ComboBoxItem>Auto-hide</ComboBoxItem>
+                  </ComboBox>
+                  <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" SelectionChanged="VisibilityMode_Changed" x:Name="widgetsVisibilityCombo" IsVisible="False" ToolTip.Tip="Auto-hide reveals on hover. Hidden stays hidden. Widgets require a Windows widgets button.">
+                    <ComboBoxItem>Always visible</ComboBoxItem>
+                    <ComboBoxItem>Auto-hide</ComboBoxItem>
+                    <ComboBoxItem>Hidden</ComboBoxItem>
+                  </ComboBox>
+                  <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" SelectionChanged="VisibilityMode_Changed" x:Name="trayVisibilityCombo" IsVisible="False" ToolTip.Tip="Auto-hide reveals on hover. Hidden stays hidden.">
+                    <ComboBoxItem>Always visible</ComboBoxItem>
+                    <ComboBoxItem>Auto-hide</ComboBoxItem>
+                    <ComboBoxItem>Hidden</ComboBoxItem>
+                  </ComboBox>
+                </StackPanel>
+                <TextBlock x:Name="autoHideSegmentsHint" TextWrapping="Wrap" Classes="help" />
+                <StackPanel IsVisible="False">
+                  <TextBlock x:Name="appVisibilityLabel" />
+                  <CheckBox x:Name="autoHideTaskbarCheckBox" Content="Taskbar — Start and app icons" IsCheckedChanged="GeneralAutoHide_Changed" />
+                  <CheckBox x:Name="autoHideWidgetsCheckBox" Content="Widgets — weather and news" IsCheckedChanged="GeneralAutoHide_Changed" />
+                  <CheckBox x:Name="autoHideTrayCheckBox" Content="System tray — clock and status icons" IsCheckedChanged="GeneralAutoHide_Changed" />
+                  <CheckBox x:Name="showTrayCheckBox" Content="Show the system tray" IsVisible="False" />
+                  <CheckBox x:Name="showWidgetsCheckBox" Content="Show widgets" IsVisible="False" />
+                  <CheckBox x:Name="showSegmentsOnHoverCheckBox" Content="Auto-hide this area" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+            <Border x:Name="shapeSpacingCard" Classes="settings-card" Grid.Row="1">
+              <StackPanel Spacing="12">
+                <TextBlock Text="Shape and spacing" Classes="section-title" />
+                <TextBlock Text="" Classes="help" x:Name="selectedAreaHint" />
+                <Grid ColumnDefinitions="96,96" HorizontalAlignment="Left" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8" ToolTip.Tip="Values are in pixels, adjusted for display scaling.">
+                  <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Corners" />
+                    <NumericUpDown x:Name="cornerRadiusInput" Minimum="0" Maximum="2147483647" Increment="1" FormatString="0" ParsingNumberStyle="Integer" ShowButtonSpinner="True" ValueChanged="NumericInput_ValueChanged" LostFocus="cornerRadiusInput_LostFocus" MinWidth="96" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Top" />
+                    <NumericUpDown x:Name="mTopInput" Minimum="-2147483648" Maximum="2147483647" Increment="1" FormatString="0" ParsingNumberStyle="Integer" ShowButtonSpinner="True" ValueChanged="NumericInput_ValueChanged" LostFocus="mTopInput_LostFocus" MinWidth="96" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4">
+                    <TextBlock Text="Bottom" />
+                    <NumericUpDown x:Name="mBottomInput" Minimum="-2147483648" Maximum="2147483647" Increment="1" FormatString="0" ParsingNumberStyle="Integer" ShowButtonSpinner="True" ValueChanged="NumericInput_ValueChanged" LostFocus="mBottomInput_LostFocus" MinWidth="96" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Left" />
+                    <NumericUpDown x:Name="mLeftInput" Minimum="-2147483648" Maximum="2147483647" Increment="1" FormatString="0" ParsingNumberStyle="Integer" ShowButtonSpinner="True" ValueChanged="NumericInput_ValueChanged" LostFocus="mLeftInput_LostFocus" MinWidth="96" />
+                  </StackPanel>
+                  <StackPanel Grid.Row="2" Grid.Column="1" Spacing="4">
+                    <TextBlock Text="Right" />
+                    <NumericUpDown x:Name="mRightInput" Minimum="-2147483648" Maximum="2147483647" Increment="1" FormatString="0" ParsingNumberStyle="Integer" ShowButtonSpinner="True" ValueChanged="NumericInput_ValueChanged" LostFocus="mRightInput_LostFocus" MinWidth="96" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </Border>
+            </Grid>
+          </StackPanel>
+          <StackPanel Spacing="20" Margin="0" x:Name="appearanceSection">
+            <Border Classes="settings-card">
+              <StackPanel Spacing="12">
+                <TextBlock Text="Auto-hide" Classes="section-title" />
+                <TextBlock Text="Editing: Apps" Classes="field-label" x:Name="hoverEditingLabel" />
+                <TextBlock Text="" Classes="help" x:Name="hoverAvailabilityHint" />
+                <StackPanel x:Name="hoverOptionsPanel" Spacing="12">
+                  <StackPanel x:Name="hoverPillPanel" Spacing="6">
+                    <CheckBox ToolTip.Tip="Reveal by touching a narrow handle at the bottom of the screen." x:Name="hoverPillCheckBox" Content="Reveal from a bottom handle" IsCheckedChanged="HoverPill_Changed" />
+                    <StackPanel x:Name="hoverPillOptions" Spacing="6">
+                      <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Handle width (pixels)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" x:Name="hoverPillWidthInput" Minimum="16" Maximum="600" Increment="4" FormatString="0" ValueChanged="HoverNumeric_ValueChanged" Width="180" HorizontalAlignment="Stretch" />
+                      </Grid>
+                      <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Handle height (pixels)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" x:Name="hoverPillThicknessInput" Minimum="1" Maximum="12" Increment="1" FormatString="0" ValueChanged="HoverNumeric_ValueChanged" Width="180" HorizontalAlignment="Stretch" />
+                      </Grid>
+                    </StackPanel>
+                  </StackPanel>
+                  <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Hide delay (seconds)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" ToolTip.Tip="Time to stay visible after the pointer leaves." x:Name="hoverDelayInput" Minimum="0" Maximum="60" Increment="0.1" FormatString="0.0" ValueChanged="HoverNumeric_ValueChanged" Width="180" HorizontalAlignment="Stretch" />
+                      </Grid>
+                  <StackPanel Spacing="12" Margin="0,8,0,0">
+                    <StackPanel Spacing="12">
+                      <StackPanel x:Name="hoverAnimationOptions" Spacing="6">
+                        <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Show effect" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1" x:Name="hoverOpenEffectCombo" HorizontalAlignment="Stretch" SelectionChanged="HoverEffect_Changed" MinWidth="180">
+                          <ComboBoxItem>None</ComboBoxItem>
+                          <ComboBoxItem>Reveal vertically</ComboBoxItem>
+                          <ComboBoxItem>Expand from the center</ComboBoxItem>
+                        </ComboBox>
+                      </Grid>
+                        <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Show duration (milliseconds)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" x:Name="hoverOpenDurationInput" Minimum="0" Maximum="5000" Increment="10" FormatString="0" ValueChanged="HoverNumeric_ValueChanged" Width="180" HorizontalAlignment="Stretch" />
+                      </Grid>
+                        <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Hide effect" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1" x:Name="hoverCloseEffectCombo" HorizontalAlignment="Stretch" SelectionChanged="HoverEffect_Changed" MinWidth="180">
+                          <ComboBoxItem>None</ComboBoxItem>
+                          <ComboBoxItem>Hide vertically</ComboBoxItem>
+                          <ComboBoxItem>Shrink toward the center</ComboBoxItem>
+                        </ComboBox>
+                      </Grid>
+                        <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Hide duration (milliseconds)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" x:Name="hoverCloseDurationInput" Minimum="0" Maximum="5000" Increment="10" FormatString="0" ValueChanged="HoverNumeric_ValueChanged" Width="180" HorizontalAlignment="Stretch" />
+                      </Grid>
+                      </StackPanel>
+                    </StackPanel>
+                  </StackPanel>
+                </StackPanel>
+                <StackPanel Spacing="20" Margin="0" x:Name="notificationsSection">
+                    <StackPanel Spacing="12">
+                      <TextBlock Text="New windows" Classes="section-title" />
+                      <CheckBox x:Name="revealOnAppOpenCheckBox" Content="Show app icons when a new window opens" />
+                      <StackPanel x:Name="appOpenDurationPanel" Spacing="6">
+                        <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Show for (seconds)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" x:Name="appOpenDurationInput" Width="180" HorizontalAlignment="Stretch" Minimum="0.1" Maximum="60" Increment="0.1" FormatString="0.0" ShowButtonSpinner="True" />
+                      </Grid>
+                      </StackPanel>
+                <TextBlock x:Name="appOpenHint" TextWrapping="Wrap" Classes="help" />
+              </StackPanel>
+              <StackPanel Spacing="12">
+                <TextBlock Text="App attention" Classes="section-title" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <CheckBox x:Name="revealOnAppAttentionCheckBox">
+                    <TextBlock Text="Show app icons when an app requests attention" TextWrapping="Wrap" />
+                  </CheckBox>
+                </Grid>
+                <CheckBox x:Name="keepAppAttentionOpenCheckBox" Content="Keep visible until activated or closed" />
+                <StackPanel x:Name="appAttentionDurationPanel" Spacing="6">
+                  <Grid ColumnDefinitions="*,180" ColumnSpacing="16">
+                        <TextBlock Text="Show for (seconds)" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" x:Name="appAttentionDurationInput" Width="180" HorizontalAlignment="Stretch" Minimum="0.1" Maximum="60" Increment="0.1" FormatString="0.0" ShowButtonSpinner="True" />
+                      </Grid>
+                </StackPanel>
+                <TextBlock x:Name="appAttentionHint" Text="Flashing taskbar icons only." ToolTip.Tip="The timer starts at the first flash. Further flashes do not extend it. Activating or closing the app ends the reveal." TextWrapping="Wrap" Classes="help" />
+              </StackPanel>
+          </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Spacing="20" Margin="0" x:Name="windowsSection">
+            <Border Classes="settings-card">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Startup" Classes="section-title" />
+                <Border Classes="setting-row"><CheckBox x:Name="StartupCheckBox" Content="Launch RoundedTB at Windows sign-in" Click="Startup_Clicked" /></Border>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Spacing="20" Margin="0" x:Name="advancedSection">
+            <TextBlock Text="Advanced" Classes="page-title" />
+            <Button x:Name="aboutButton" Content="Help" Click="aboutButton_Click" HorizontalAlignment="Left" MinWidth="90" />
+            <Border Classes="settings-card">
+              <StackPanel Spacing="12">
+                <TextBlock Text="Test app attention" Classes="section-title" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                  <ComboBox x:Name="appAttentionTestStyleComboBox" SelectedIndex="0" HorizontalAlignment="Stretch">
+                    <ComboBoxItem>Normal</ComboBoxItem>
+                    <ComboBoxItem>Warning (yellow)</ComboBoxItem>
+                    <ComboBoxItem>Error (red)</ComboBoxItem>
+                  </ComboBox>
+                  <Button Grid.Column="1" x:Name="testAppAttentionButton" Content="Test attention" Click="TestAppAttention_Click" ToolTip.Tip="RoundedTB minimizes and flashes until you return. Visibility follows your duration or keep-visible setting." />
+                </Grid>
+              </StackPanel>
+            </Border>
+            <Border Classes="settings-card">
+              <StackPanel Spacing="12">
+                <TextBlock Text="Check Windows permissions" Classes="section-title" />
+                <TextBlock Text="Test access to Windows taskbar controls." Classes="help" />
+                <Button x:Name="testWindowsApisButton" Content="Run permission check" ToolTip.Tip="Briefly pauses RoundedTB, tests Windows API access, and restores temporary changes." Click="TestWindowsApis_Click" HorizontalAlignment="Left" />
+                <TextBox x:Name="diagnosticsReport" IsVisible="False" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="180" MaxHeight="320" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</Window>

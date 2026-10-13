@@ -1,7 +1,7 @@
-﻿using System;
+using Avalonia;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Windows;
 
 namespace RoundedTB
 {

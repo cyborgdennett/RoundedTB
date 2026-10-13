@@ -1,0 +1,23 @@
+<Window x:Class="RoundedTB.TaskbarEffect"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Name="mwin"
+        Title="TaskbarEffect" Height="48" Width="1920" TransparencyLevelHint="Transparent" WindowDecorations="None" CanResize="False" Background="#02000000" ShowInTaskbar="False">
+
+    <Grid>
+
+        <!--MouseMove="HandleMouseMove"-->
+        <Canvas 
+            Background="Transparent">
+            <Ellipse x:Name="eye"
+             Width="73"
+             Height="38"
+             Fill="white" Canvas.Top="10"/>
+            
+        </Canvas>
+    </Grid>
+</Window>
+

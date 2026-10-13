@@ -1,9 +1,25 @@
 param([string]$Installer = (Join-Path $PSScriptRoot '..\..\artifacts\installer\RoundedTB-Setup-1.0.0-win-x64.exe'))
 $ErrorActionPreference = 'Stop'
+Add-Type @'
+using System.Runtime.InteropServices;
+using System.Text;
+public static class InstallerPathProbe {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern uint GetLongPathName(string path, StringBuilder result, uint capacity);
+}
+'@
+function Get-CanonicalPath([string]$Path) {
+    $buffer = New-Object Text.StringBuilder 32768
+    $length = [InstallerPathProbe]::GetLongPathName($Path, $buffer, $buffer.Capacity)
+    if (!$length -or $length -ge $buffer.Capacity) { throw "Cannot resolve installed path: $Path" }
+    return $buffer.ToString()
+}
 $Installer = (Resolve-Path $Installer).Path
 $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{B8DBF5D1-CF65-4736-9556-711CBE407756}_is1'
 if (Test-Path $uninstallKey) { throw 'Run this isolated installer check before installing the product with Setup, or in a clean test VM.' }
 $destination = Join-Path $env:TEMP ('RoundedTB Installer Test ' + [guid]::NewGuid())
+$logDirectory = Join-Path $PSScriptRoot '..\..\artifacts\installer-test-logs'
+New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'RoundedTB.lnk'
 $shortcutBytes = if (Test-Path $shortcut) { [IO.File]::ReadAllBytes($shortcut) } else { $null }
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
@@ -24,7 +40,8 @@ try {
     $localInstaller = Join-Path $env:TEMP ('RoundedTB-SetupTest-' + [guid]::NewGuid() + '.exe')
     Copy-Item $Installer $localInstaller
     foreach ($attempt in 1..2) {
-        Run-Setup $localInstaller "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /TASKS=startup /DIR=`"$destination`" /LOG=`"$destination-install-$attempt.log`""
+        $log = Join-Path $logDirectory "install-$attempt.log"
+        Run-Setup $localInstaller "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /TASKS=startup /DIR=`"$destination`" /LOG=`"$log`""
         foreach ($file in @('RoundedTB.exe', 'RoundedTB.Recovery.exe', 'unins000.exe', 'uninstall.ps1')) {
             if (!(Test-Path (Join-Path $destination $file))) { throw "Missing installed file: $file" }
         }
@@ -32,7 +49,7 @@ try {
         $task = $folder.GetTask($taskName)
         $actualPath = $task.Definition.Actions.Item(1).Path
         $expectedPath = Join-Path $destination 'RoundedTB.exe'
-        if ($actualPath -ne $expectedPath) { throw "Startup points to '$actualPath'; expected '$expectedPath'." }
+        if ((Get-CanonicalPath $actualPath) -ne (Get-CanonicalPath $expectedPath)) { throw "Startup points to '$actualPath'; expected '$expectedPath'." }
         Write-Output "Installation/upgrade $attempt passed."
     }
     Run-Setup (Join-Path $destination 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'

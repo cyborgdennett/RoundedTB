@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installer-test-logs
-          path: ${{ runner.temp }}/RoundedTB Installer Test *-install-*.log
+          path: artifacts/installer-test-logs/*.log
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:

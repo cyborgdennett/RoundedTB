@@ -18,6 +18,7 @@
   <ItemGroup>
     <AvaloniaResource Include="res\**" />
     <AvaloniaResource Include="*.ico" />
+    <None Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="CopyRecoveryAppHost" AfterTargets="Build" Condition="Exists('$(TargetDir)RoundedTB.exe')">
     <Copy SourceFiles="$(TargetDir)RoundedTB.exe" DestinationFiles="$(TargetDir)RoundedTB.Recovery.exe" />

@@ -54,7 +54,7 @@ namespace RoundedTB
         private bool applying;
         private readonly DispatcherTimer saveEditorTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
         public IntPtr NativeHandle { get; private set; }
-        private bool exiting;
+        private volatile bool exiting;
         private TrayIcon trayIcon;
         public NativeMenuItem ShowMenuItem = new NativeMenuItem("Show RoundedTB");
         public int selectedSegment = 0; // 0 = Simple, 1 = AppList, 2 = Tray, 3 = Widgets
@@ -331,6 +331,8 @@ namespace RoundedTB
             taskbarDetails = await Task.Run(() => Taskbar.GenerateTaskbarInfo(activeSettings.IsWindows11 && activeSettings.IsDynamic, !activeSettings.IsWindowsDefault));
             Win32Properties.AddWndProcHookCallback(this, interaction.HwndHook);
             NativeHandle = TryGetPlatformHandle().Handle;
+            sessionNotificationsRegistered = LocalPInvoke.WTSRegisterSessionNotification(NativeHandle, 0);
+            if (!sessionNotificationsRegistered) interaction.AddLog("Session notification registration failed: " + Marshal.GetLastWin32Error());
             LocalPInvoke.RegisterHotKey(NativeHandle, 9000, 0x8, 0x71);
             ShellHookMessage = (uint)LocalPInvoke.RegisterWindowMessage("SHELLHOOK");
             shellHookRegistered = ShellHookMessage != 0 && LocalPInvoke.RegisterShellHookWindow(NativeHandle);
@@ -460,10 +462,41 @@ namespace RoundedTB
         private bool workAreaExpansionApplied;
         private long lastWorkAreaCheck;
 
+        private bool sessionNotificationsRegistered;
+        internal volatile bool SessionLocked;
+
+        internal void HandleSessionChange(int reason)
+        {
+            if (reason == 7) SessionLocked = true;
+            else if (reason == 8 || reason == 15) SessionLocked = false;
+            if (reason == 7 || reason == 8 || reason == 15)
+                SessionResumeDiagnostics.Capture(this, reason);
+        }
+
         internal void MaintainExpandedWorkAreas()
         {
             lock (expandedWorkAreaLock)
             {
+                if (nativeTaskbarPin != null)
+                {
+                    if (!nativeTaskbarPin.Active && !exiting
+                        && TaskbarPinController.FindTaskbar() != IntPtr.Zero
+                        && System.Threading.Interlocked.CompareExchange(ref nativePinRefreshPending, 1, 0) == 0)
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            try
+                            {
+                                nativeTaskbarPin?.Dispose();
+                                nativeTaskbarPin = null;
+                                nativePinAttempted = false;
+                                expandedWorkAreaApplied = false;
+                                if (!exiting && !activeSettings.IsWindowsDefault) AutoHide(true, taskbarDetails);
+                            }
+                            catch (Exception error) { interaction?.AddLog("Native taskbar restart failed: " + error.Message); }
+                            finally { System.Threading.Interlocked.Exchange(ref nativePinRefreshPending, 0); }
+                        });
+                    return;
+                }
                 if (!workAreaExpansionApplied || Environment.TickCount64 - lastWorkAreaCheck < 500) return;
                 lastWorkAreaCheck = Environment.TickCount64;
                 foreach (var display in MonitorStuff.GetDisplays())
@@ -472,7 +505,9 @@ namespace RoundedTB
                     if (display.WorkArea.Left == bounds.Left && display.WorkArea.Top == bounds.Top
                         && display.WorkArea.Right == bounds.Right && display.WorkArea.Bottom == bounds.Bottom) continue;
                     originalWorkAreas.TryAdd(display.Handle, display.WorkArea);
-                    if (LocalPInvoke.SystemParametersInfo(0x002F, 0, ref bounds, 0))
+                    bool expanded = LocalPInvoke.SystemParametersInfo(0x002F, 0, ref bounds, 0);
+                    SessionResumeDiagnostics.RecordWrite("ExpandWorkArea", IntPtr.Zero, bounds, expanded ? 1 : 0);
+                    if (expanded)
                         LocalPInvoke.EnumWindows((window, _) =>
                         {
                             var placement = LocalPInvoke.WINDOWPLACEMENT.Default;
@@ -499,6 +534,9 @@ namespace RoundedTB
         }
 
         private bool autoHideApplied;
+        private NativeTaskbarPin nativeTaskbarPin;
+        private bool nativePinAttempted;
+        private int nativePinRefreshPending;
 
         private bool expandedWorkAreaApplied;
         private volatile Dictionary<IntPtr, LocalPInvoke.RECT> expandedWorkAreas = new();
@@ -507,8 +545,43 @@ namespace RoundedTB
         public void AutoHide(bool enabled, List<Types.Taskbar> taskbarDetails)
         {
             if (!OperatingSystem.IsWindows() || taskbarDetails.Count == 0) return;
-            bool hide = false; // Native auto-hide stays off; segment regions control visibility.
+            bool hide = false;
             bool expand = enabled && WorkAreaExpansion.Enabled(activeSettings);
+            if (!expand) nativePinAttempted = false;
+            if (!expand && nativeTaskbarPin != null)
+            {
+                lock (expandedWorkAreaLock)
+                {
+                    nativeTaskbarPin.Dispose();
+                    nativeTaskbarPin = null;
+                }
+            }
+            if (expand)
+            {
+                lock (expandedWorkAreaLock)
+                {
+                    if (nativeTaskbarPin == null && !nativePinAttempted)
+                    {
+                        nativePinAttempted = true;
+                        nativeTaskbarPin = NativeTaskbarPin.TryStart(message => interaction?.AddLog(message));
+                    }
+                    if (nativeTaskbarPin?.Active == true)
+                    {
+                        bool changed = !autoHideApplied || !expandedWorkAreaApplied;
+                        // Native auto-hide releases the reservation; the helper
+                        // prevents retraction and our regions control visibility.
+                        workAreaExpansionApplied = false;
+                        originalWorkAreas.Clear();
+                        expandedWorkAreas = MonitorStuff.GetDisplays().ToDictionary(display => display.Handle, display => display.MonitorArea);
+                        autoHideApplied = true;
+                        expandedWorkAreaApplied = true;
+                        if (changed) interaction?.AddLog("Work area mode: native reservation released, taskbar pinned open.");
+                        return;
+                    }
+                    nativeTaskbarPin?.Dispose();
+                    nativeTaskbarPin = null;
+                }
+            }
             if (hide == autoHideApplied && expand == expandedWorkAreaApplied) return;
             lock (expandedWorkAreaLock)
             {
@@ -516,7 +589,8 @@ namespace RoundedTB
                 foreach (var original in originalWorkAreas.Values)
                 {
                     var area = original;
-                    LocalPInvoke.SystemParametersInfo(0x002F, 0, ref area, 2);
+                    bool restored = LocalPInvoke.SystemParametersInfo(0x002F, 0, ref area, 2);
+                    SessionResumeDiagnostics.RecordWrite("RestoreWorkArea", IntPtr.Zero, area, restored ? 1 : 0);
                 }
                 originalWorkAreas.Clear();
             }
@@ -843,6 +917,7 @@ namespace RoundedTB
                 appAttentionReveal.Clear();
                 if (OperatingSystem.IsWindows()) Win32Properties.RemoveWndProcHookCallback(this, TaskbarButtonHook);
                 if (shellHookRegistered) LocalPInvoke.DeregisterShellHookWindow(NativeHandle);
+                if (sessionNotificationsRegistered) LocalPInvoke.WTSUnRegisterSessionNotification(NativeHandle);
                 if (NativeHandle != IntPtr.Zero) LocalPInvoke.UnregisterHotKey(NativeHandle, 9000);
                 if (interaction != null) Win32Properties.RemoveWndProcHookCallback(this, interaction.HwndHook);
                 if (trayIcon != null)

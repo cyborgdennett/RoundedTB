@@ -20,6 +20,15 @@
     <AvaloniaResource Include="*.ico" />
     <None Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\native\TaskbarPin\PrototypeController.cs" Link="Native\TaskbarPinController.cs" />
+    <None Include="..\artifacts\native-pin\RoundedTB.TaskbarPin.dll" Link="Native\RoundedTB.TaskbarPin.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('..\artifacts\native-pin\RoundedTB.TaskbarPin.dll')" />
+    <None Include="..\native\TaskbarPin\symbols\*.json" Link="Native\symbols\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\native\TaskbarPin\vendor\minhook\LICENSE.txt" Link="Native\LICENSE-Minhook.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="RequireNativeTaskbarPin" BeforeTargets="Publish" Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <Error Condition="!Exists('..\artifacts\native-pin\RoundedTB.TaskbarPin.dll')" Text="Build the native helper before publishing: RoundedTB.Tests/PowerShell/Build-TaskbarPinPrototype.ps1" />
+  </Target>
   <Target Name="CopyRecoveryAppHost" AfterTargets="Build" Condition="Exists('$(TargetDir)RoundedTB.exe')">
     <Copy SourceFiles="$(TargetDir)RoundedTB.exe" DestinationFiles="$(TargetDir)RoundedTB.Recovery.exe" />
   </Target>

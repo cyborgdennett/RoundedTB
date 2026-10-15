@@ -18,6 +18,23 @@ public static class TestAppBuilder
 public class WindowTests
 {
     [AvaloniaFact]
+    public void SessionNotificationsTrackLockState()
+    {
+        var main = new MainWindow();
+        main.HandleSessionChange(7);
+        Assert.True(main.SessionLocked);
+        main.HandleSessionChange(8);
+        Assert.False(main.SessionLocked);
+        main.HandleSessionChange(7);
+        main.HandleSessionChange(9);
+        Assert.True(main.SessionLocked);
+        main.HandleSessionChange(15);
+        Assert.False(main.SessionLocked);
+        main.shouldReallyDieNoReally = true;
+        main.Close();
+    }
+
+    [AvaloniaFact]
     public void SectionLinksScrollTheSamePageAndStartupLivesInWindowsIntegration()
     {
         var main = new MainWindow();

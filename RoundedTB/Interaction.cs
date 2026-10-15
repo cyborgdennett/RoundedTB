@@ -159,6 +159,12 @@ namespace RoundedTB
 
         public IntPtr HwndHook(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            if (msg == 0x02b1)
+            {
+                mw.HandleSessionChange(unchecked((int)wParam.ToInt64()));
+                handled = true;
+                return IntPtr.Zero;
+            }
             if (msg == Program.ShowSettingsMessage && Program.ShowSettingsMessage != 0)
             {
                 if (!mw.IsVisible) mw.ShowMenuItem_Click(null, null);

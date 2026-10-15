@@ -20,6 +20,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Build native taskbar helper
+        shell: powershell
+        run: .\RoundedTB.Tests\PowerShell\Build-TaskbarPinPrototype.ps1
       - name: Build
         run: dotnet build RoundedTB.sln -c Release
       - name: Test Avalonia views

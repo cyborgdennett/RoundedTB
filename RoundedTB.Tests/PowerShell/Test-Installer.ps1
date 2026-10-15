@@ -1,4 +1,4 @@
-param([string]$Installer = (Join-Path $PSScriptRoot '..\..\artifacts\installer\RoundedTB-Setup-1.0.0-win-x64.exe'))
+param([string]$Installer = (Join-Path $PSScriptRoot '..\..\artifacts\installer\RoundedTB-Setup-1.0.1-win-x64.exe'))
 $ErrorActionPreference = 'Stop'
 Add-Type @'
 using System.Runtime.InteropServices;
@@ -42,7 +42,7 @@ try {
     foreach ($attempt in 1..2) {
         $log = Join-Path $logDirectory "install-$attempt.log"
         Run-Setup $localInstaller "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /TASKS=startup /DIR=`"$destination`" /LOG=`"$log`""
-        foreach ($file in @('RoundedTB.exe', 'RoundedTB.Recovery.exe', 'unins000.exe', 'uninstall.ps1')) {
+        foreach ($file in @('RoundedTB.exe', 'RoundedTB.Recovery.exe', 'unins000.exe', 'uninstall.ps1', 'Native\RoundedTB.TaskbarPin.dll', 'Native\LICENSE-Minhook.txt', 'Native\symbols\windows-26220.json')) {
             if (!(Test-Path (Join-Path $destination $file))) { throw "Missing installed file: $file" }
         }
         if (!(Test-Path $uninstallKey)) { throw 'Missing Apps uninstall entry.' }

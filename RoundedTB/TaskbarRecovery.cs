@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -114,9 +115,12 @@ internal static class TaskbarRecovery
 
     private static void Restore(Snapshot snapshot)
     {
+        // The Explorer watchdog also restores native appbar state on parent
+        // death. Finish that transition before removing our clipping/styles;
+        // otherwise its later visibility changes can race the final reset.
+        StopNativePin(snapshot.ProcessId);
         foreach (var taskbar in Taskbar.GenerateTaskbarInfo(enableEffects: false))
         {
-            Taskbar.ResetTaskbar(taskbar, new Types.Settings());
             Taskbar.SetTaskbarState((LocalPInvoke.AppBarStates)snapshot.AppBarState, taskbar.TaskbarHwnd);
         }
         foreach (var display in MonitorStuff.GetDisplays())
@@ -134,5 +138,40 @@ internal static class TaskbarRecovery
             LocalPInvoke.RemoveProp(window, "RoundedTB.NonRudeOwner");
             return true;
         }, IntPtr.Zero);
+        // Work-area and appbar notifications can rebuild taskbar windows.
+        // Discover current handles again and clear appearance only after all
+        // state/work-area changes and the native watchdog have completed.
+        foreach (var taskbar in Taskbar.GenerateTaskbarInfo(enableEffects: false))
+            Taskbar.ResetTaskbar(taskbar, new Types.Settings());
+    }
+
+    private static void StopNativePin(int processId)
+    {
+        try
+        {
+            using var mapping = MemoryMappedFile.OpenExisting(@"Local\RoundedTB.TaskbarPin." + processId, MemoryMappedFileRights.ReadWrite);
+            using var view = mapping.CreateViewAccessor(0, 352, MemoryMappedFileAccess.ReadWrite);
+            if (view.ReadUInt32(0) != 0x50544252 || view.ReadUInt32(4) != 1
+                || view.ReadUInt32(8) != 352 || view.ReadUInt32(12) != (uint)processId) return;
+            view.Write(68, 0); // sharedProtocol.h: Enabled
+            var watch = Stopwatch.StartNew();
+            int status;
+            do
+            {
+                status = view.ReadInt32(72); // NativeStatus: Stopped=2, Failed=3
+                if (status == 2 || status == 3) break;
+                Thread.Sleep(20);
+            } while (watch.ElapsedMilliseconds < 10000);
+            if (status != 2)
+                LogRecovery($"Native taskbar cleanup status={status}, error={view.ReadUInt32(76)}; continuing Windows restoration.");
+        }
+        catch (FileNotFoundException) { } // No native controller was started.
+        catch (Exception error) { LogRecovery("Native taskbar cleanup wait failed: " + error.Message); }
+    }
+
+    private static void LogRecovery(string message)
+    {
+        try { File.AppendAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "rtb.log"),
+            $"[{DateTime.Now:O}] Taskbar recovery: {message}{Environment.NewLine}"); } catch { }
     }
 }

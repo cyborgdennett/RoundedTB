@@ -982,7 +982,8 @@ namespace RoundedTB
             msgData.cbSize = (uint)Marshal.SizeOf(msgData);
             msgData.hWnd = hwnd;
             msgData.lParam = (int)option;
-            LocalPInvoke.SHAppBarMessage(LocalPInvoke.ABM.SetState, ref msgData);
+            var result = LocalPInvoke.SHAppBarMessage(LocalPInvoke.ABM.SetState, ref msgData);
+            SessionResumeDiagnostics.RecordWrite("SetTaskbarState:" + option, hwnd, default, result.ToInt64());
         }
 
 

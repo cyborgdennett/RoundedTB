@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "Modules": [
+    {
+      "Path": "C:\\WINDOWS\\System32\\taskbar.dll",
+      "Name": "taskbar.dll",
+      "Timestamp": 4165648762,
+      "ImageSize": 3260416,
+      "Symbols": {
+        "SecondaryAutoHide": {
+          "Name": "private: void __cdecl CSecondaryTray::_AutoHide(bool) __ptr64",
+          "Rva": 1456680
+        },
+        "Hide": {
+          "Name": "public: void __cdecl TrayUI::_Hide(void) __ptr64",
+          "Rva": 386276
+        }
+      }
+    },
+    {
+      "Path": "C:\\WINDOWS\\SystemApps\\MicrosoftWindows.Client.Core_cw5n1h2txyewy\\Taskbar.View.dll",
+      "Name": "Taskbar.View.dll",
+      "Timestamp": 1790549782,
+      "ImageSize": 9981952,
+      "Symbols": {
+        "ShouldExpand": {
+          "Name": "public: bool __cdecl winrt::Taskbar::implementation::ViewCoordinator::ShouldTaskbarBeExpanded(unsigned __int64,bool) __ptr64",
+          "Rva": 2999012
+        },
+        "UpdateIsExpanded": {
+          "Name": "public: void __cdecl winrt::Taskbar::implementation::ViewCoordinator::UpdateIsExpanded(unsigned __int64,enum TaskbarTipTest::TaskbarExpandCollapseReason) __ptr64",
+          "Rva": 363744
+        }
+      }
+    }
+  ]
+}

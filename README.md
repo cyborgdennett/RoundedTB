@@ -18,7 +18,13 @@ dotnet build RoundedTB.sln -c Release
 dotnet test RoundedTB.Tests/RoundedTB.Tests.csproj -c Release --no-build
 ```
 
-Run on Windows with `dotnet run --project RoundedTB/RoundedTB.csproj`. To create a standalone Windows x64 build, including the .NET runtime:
+Run on Windows with `dotnet run --project RoundedTB/RoundedTB.csproj`. Before publishing, build the native helper from x64 PowerShell on Windows with Visual Studio C++ Build Tools installed:
+
+```powershell
+.\RoundedTB.Tests\PowerShell\Build-TaskbarPinPrototype.ps1
+```
+
+Then create a standalone Windows x64 build, including the .NET runtime:
 
 ```sh
 dotnet publish RoundedTB/RoundedTB.csproj -c Release -r win-x64 --self-contained true -o artifacts/RoundedTB
@@ -26,7 +32,7 @@ dotnet publish RoundedTB/RoundedTB.csproj -c Release -r win-x64 --self-contained
 
 Install the published build from PowerShell with `./scripts/install.ps1 -EnableStartup`. The default destination is `%LOCALAPPDATA%\Programs\RoundedTB`, which works for every Windows username without administrator rights. The installer adds a Start Menu shortcut and updates sign-in startup to the installed executable. It preserves settings and leaves any old `%USERPROFILE%\RoundedTB` installation as a backup. Use `-NoLaunch` to install without starting the app.
 
-Run `artifacts/RoundedTB/RoundedTB.exe`. Closing the settings window keeps RoundedTB in the system tray; choose **Close RoundedTB** in the tray menu to exit and restore the taskbar. A per-user Task Scheduler logon task with no configured delay uses `--startup` to launch with the settings window hidden. Existing `rtb.json` settings remain compatible, including the roaming location for packaged installations. Store/MSIX packaging is retained in `PackagingProject` but is not built by the standalone CI workflow and needs separate Windows packaging validation.
+Run `artifacts/RoundedTB/RoundedTB.exe`. Closing the settings window keeps RoundedTB in the system tray; choose **Close RoundedTB** in the tray menu to exit and restore the taskbar. A per-user Task Scheduler logon task with no configured delay uses `--startup` to launch with the settings window hidden. Existing `rtb.json` settings remain compatible, including the roaming location for packaged installations. The standalone CI builds the portable application and installer.
 
 Before releasing, test on Windows: apply margins and corner radii to each segment, switch dynamic/split mode, toggle the tray with Win+F2, hide and reopen settings, launch a second instance, toggle run at startup, and exit to verify restoration. Also check Explorer restart, multiple monitors and DPI scaling, maximized-window/task-switch filling. Headless tests cover view resources, measured segment layout, initialized editor changes, mode switching, and missing settings; they do not exercise Explorer or the Windows tray. Startup and taskbar worker errors are written to `rtb.log` in the configuration directory (normally `%LOCALAPPDATA%`); the log rotates at 2 MiB.
 
@@ -111,16 +117,18 @@ Taskbar auto-hide includes **Show when an app flashes**, available with Auto-hid
 
 The **Test attention** button in Advanced is available after enabling that option. It minimizes settings to release focus and flashes RoundedTB’s own taskbar icon continuously until you return, exercising the real notification path. The test style selector offers Normal, Warning (yellow paused-progress indicator), and Error (red error-progress indicator). Returning clears the flashing and colored indicator. Tests and actual app notifications follow the configured reveal duration, or **Keep visible until the app is activated or closed**. This option disables the duration field and keeps the segment visible until the notifying app is activated or closed.
 
-RoundedTB starts an independent `RoundedTB.Recovery.exe` helper before changing the taskbar. It waits without polling for RoundedTB to exit, then restores the native taskbar and any expanded work area, including after a forced PID kill or `taskkill /IM RoundedTB.exe /F`. Killing the helper as well (for example, terminating the entire process tree) bypasses this recovery. Closing RoundedTB from its taskbar button or with Alt+F4 exits and restores Windows; the settings window's caption X continues to hide settings.
+RoundedTB starts an independent `RoundedTB.Recovery.exe` helper before changing the taskbar. It waits without polling for RoundedTB to exit, then restores the native taskbar and any expanded work area, including after a forced PID kill or `taskkill /IM RoundedTB.exe /F`. Killing the helper as well (for example, terminating the entire process tree) bypasses this recovery. Closing the settings window through its caption X, taskbar preview, or Alt+F4 hides settings; choose Close RoundedTB from the tray to exit and restore Windows.
 
 ## Standalone Windows installer
 
 After publishing the Release `win-x64` build, install [Inno Setup 6](https://jrsoftware.org/isdl.php) on the build machine and run:
 
 ```powershell
-.\scripts\build-installer.ps1 -Version 1.0.0
+.\scripts\build-installer.ps1 -Version 1.0.1
 ```
 
-Send `artifacts\installer\RoundedTB-Setup-1.0.0-win-x64.exe` to users. It includes .NET, uses the normal RoundedTB icon, and defaults to `%LOCALAPPDATA%\Programs\RoundedTB` and lets users choose another writable installation folder. It installs without administrator permissions. The installer targets Windows 11 x64-compatible systems. Sign-in startup is optional; existing startup registration is preserved during upgrades. Uninstall through Windows Settings → Apps restores the taskbar and removes the app and its startup registration. Preferences and logs are retained.
+Send `artifacts\installer\RoundedTB-Setup-1.0.1-win-x64.exe` to users. It includes .NET, uses the normal RoundedTB icon, and defaults to `%LOCALAPPDATA%\Programs\RoundedTB` and lets users choose another writable installation folder. It installs without administrator permissions. The installer targets Windows 11 x64-compatible systems. Sign-in startup is optional; existing startup registration is preserved during upgrades. Uninstall through Windows Settings → Apps restores the taskbar and removes the app and its startup registration. Preferences and logs are retained.
 
 CI builds and tests the installer and uploads it as `RoundedTB-installer`, alongside the portable application artifact. `Test-Installer.ps1` checks installation, upgrade, startup registration, and removal in a temporary directory; it refuses to run when this installer is already registered for the current user. The installer is currently unsigned, so Windows may display an unknown-publisher or SmartScreen prompt.
+
+The experimental work-area mode includes an x64 native taskbar helper to prevent unlock flicker on exactly matched Windows module versions. Unsupported builds retain the manual work-area fallback. See [native helper details](native/TaskbarPin/README.md) for coverage and limitations.

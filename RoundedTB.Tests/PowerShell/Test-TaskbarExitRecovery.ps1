@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 public static class ExitRecoveryProbe {
  [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left,Top,Right,Bottom; }
  [StructLayout(LayoutKind.Sequential)] public struct MonitorInfo { public uint Size; public Rect Monitor,Work; public uint Flags; }
+ [StructLayout(LayoutKind.Sequential)] public struct Appbar { public uint Size; public IntPtr Window; public uint Callback,Edge; public Rect Bounds; public IntPtr Param; }
+ [DllImport("shell32.dll")] public static extern UIntPtr SHAppBarMessage(uint message,ref Appbar data);
  [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
  [DllImport("user32.dll")] public static extern IntPtr FindWindow(string c,string n);
  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h,uint m,IntPtr w,IntPtr l);
@@ -35,6 +37,8 @@ function Verify-Restored($p,$description) {
  if(!$p.WaitForExit(10000)){throw "$description did not exit."}
  Get-Process 'RoundedTB.Recovery' -ErrorAction SilentlyContinue | Wait-Process -Timeout 15
  $bar=[ExitRecoveryProbe]::FindWindow('Shell_TrayWnd',$null)
+ $appbar=New-Object ExitRecoveryProbe+Appbar;$appbar.Size=[Runtime.InteropServices.Marshal]::SizeOf($appbar);$appbar.Window=$bar
+ if(([ExitRecoveryProbe]::SHAppBarMessage(4,[ref]$appbar).ToUInt64() -band 1) -ne 0){throw "$description left native auto-hide enabled."}
  if([ExitRecoveryProbe]::GetWindowRgn($bar,$region) -ne 0){throw "$description left a custom taskbar region."}
  if(([ExitRecoveryProbe]::GetWindowLong($bar,-20) -band 0x80020) -ne 0){throw "$description left layered/transparent taskbar styles."}
  $info=New-Object ExitRecoveryProbe+MonitorInfo

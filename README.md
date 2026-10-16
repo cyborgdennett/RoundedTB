@@ -124,11 +124,11 @@ RoundedTB starts an independent `RoundedTB.Recovery.exe` helper before changing 
 After publishing the Release `win-x64` build, install [Inno Setup 6](https://jrsoftware.org/isdl.php) on the build machine and run:
 
 ```powershell
-.\scripts\build-installer.ps1 -Version 1.0.1
+.\scripts\build-installer.ps1 -Version 1.0.2
 ```
 
-Send `artifacts\installer\RoundedTB-Setup-1.0.1-win-x64.exe` to users. It includes .NET, uses the normal RoundedTB icon, and defaults to `%LOCALAPPDATA%\Programs\RoundedTB` and lets users choose another writable installation folder. It installs without administrator permissions. The installer targets Windows 11 x64-compatible systems. Sign-in startup is optional; existing startup registration is preserved during upgrades. Uninstall through Windows Settings → Apps restores the taskbar and removes the app and its startup registration. Preferences and logs are retained.
+Send `artifacts\installer\RoundedTB-Setup-1.0.2-win-x64.exe` to users. It includes .NET, uses the normal RoundedTB icon, and defaults to `%LOCALAPPDATA%\Programs\RoundedTB` and lets users choose another writable installation folder. It installs without administrator permissions. The installer targets Windows 11 x64-compatible systems. Sign-in startup is optional; existing startup registration is preserved during upgrades. Uninstall through Windows Settings → Apps restores the taskbar and removes the app and its startup registration. Preferences and logs are retained.
 
 CI builds and tests the installer and uploads it as `RoundedTB-installer`, alongside the portable application artifact. `Test-Installer.ps1` checks installation, upgrade, startup registration, and removal in a temporary directory; it refuses to run when this installer is already registered for the current user. The installer is currently unsigned, so Windows may display an unknown-publisher or SmartScreen prompt.
 
-The experimental work-area mode includes an x64 native taskbar helper to prevent unlock flicker on exactly matched Windows module versions. Unsupported builds retain the manual work-area fallback. See [native helper details](native/TaskbarPin/README.md) for coverage and limitations.
+The experimental work-area mode includes an x64 native taskbar helper to prevent unlock flicker on exactly matched Windows module versions. Unknown module versions resolve matching Microsoft symbols in the background and cache verified addresses locally. Missing or incompatible symbols retain the manual work-area fallback. See [native helper details](native/TaskbarPin/README.md) for coverage and limitations.

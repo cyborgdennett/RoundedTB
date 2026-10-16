@@ -489,6 +489,9 @@ namespace RoundedTB
                                 nativeTaskbarPin?.Dispose();
                                 nativeTaskbarPin = null;
                                 nativePinAttempted = false;
+                                nativePinRetryTimer?.Dispose();
+                                nativePinRetryTimer = null;
+                                nativePinRetryCount = 0;
                                 expandedWorkAreaApplied = false;
                                 if (!exiting && !activeSettings.IsWindowsDefault) AutoHide(true, taskbarDetails);
                             }
@@ -537,6 +540,21 @@ namespace RoundedTB
         private NativeTaskbarPin nativeTaskbarPin;
         private bool nativePinAttempted;
         private int nativePinRefreshPending;
+        private IDisposable nativePinRetryTimer;
+        private int nativePinRetryCount;
+
+        private void RetryNativeAttachment()
+        {
+            if (nativePinRetryTimer != null || nativePinRetryCount >= 4) return;
+            int delay = 1 << nativePinRetryCount++;
+            nativePinRetryTimer = DispatcherTimer.RunOnce(() =>
+            {
+                nativePinRetryTimer = null;
+                if (exiting || activeSettings.IsWindowsDefault || !WorkAreaExpansion.Enabled(activeSettings)) return;
+                nativePinAttempted = false;
+                AutoHide(true, taskbarDetails);
+            }, TimeSpan.FromSeconds(delay));
+        }
 
         private bool expandedWorkAreaApplied;
         private volatile Dictionary<IntPtr, LocalPInvoke.RECT> expandedWorkAreas = new();
@@ -547,7 +565,13 @@ namespace RoundedTB
             if (!OperatingSystem.IsWindows() || taskbarDetails.Count == 0) return;
             bool hide = false;
             bool expand = enabled && WorkAreaExpansion.Enabled(activeSettings);
-            if (!expand) nativePinAttempted = false;
+            if (!expand)
+            {
+                nativePinAttempted = false;
+                nativePinRetryTimer?.Dispose();
+                nativePinRetryTimer = null;
+                nativePinRetryCount = 0;
+            }
             if (!expand && nativeTaskbarPin != null)
             {
                 lock (expandedWorkAreaLock)
@@ -563,10 +587,19 @@ namespace RoundedTB
                     if (nativeTaskbarPin == null && !nativePinAttempted)
                     {
                         nativePinAttempted = true;
-                        nativeTaskbarPin = NativeTaskbarPin.TryStart(message => interaction?.AddLog(message));
+                        nativeTaskbarPin = NativeTaskbarPin.TryStart(message => interaction?.AddLog(message),
+                            () => Dispatcher.UIThread.Post(() =>
+                            {
+                                if (exiting || activeSettings.IsWindowsDefault || !WorkAreaExpansion.Enabled(activeSettings)) return;
+                                nativePinAttempted = false;
+                                AutoHide(true, taskbarDetails);
+                            }), RetryNativeAttachment);
                     }
                     if (nativeTaskbarPin?.Active == true)
                     {
+                        nativePinRetryTimer?.Dispose();
+                        nativePinRetryTimer = null;
+                        nativePinRetryCount = 0;
                         bool changed = !autoHideApplied || !expandedWorkAreaApplied;
                         // Native auto-hide releases the reservation; the helper
                         // prevents retraction and our regions control visibility.

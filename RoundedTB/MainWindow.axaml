@@ -195,7 +195,7 @@
               </Border>
               <Border Classes="setting-row">
               <StackPanel Spacing="4">
-                <CheckBox x:Name="expandWorkAreaCheckBox" ToolTip.Tip="Lets maximized windows extend behind the taskbar. Experimental and unstable.">
+                <CheckBox x:Name="expandWorkAreaCheckBox" ToolTip.Tip="Lets maximized windows extend behind the taskbar. Experimental and unstable. Downloads matching Microsoft symbols in the background when needed.">
                   <TextBlock Text="Use taskbar space while Maximized" TextWrapping="Wrap" />
                 </CheckBox>
                 <TextBlock Text="Experimental · unstable" Classes="help" Margin="28,0,0,0" />

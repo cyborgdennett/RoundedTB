@@ -118,6 +118,23 @@ namespace RoundedTB
         /// </returns>
         public static Types.Taskbar GetQuickTaskbarRects(IntPtr taskbarHwnd, IntPtr trayHwnd, IntPtr appListHwnd, bool measureAppList = false)
         {
+            // Explorer can publish Shell_TrayWnd before its notification-area
+            // child exists. Recover that child without waiting for another parent
+            // handle change, otherwise the tray stays clipped out indefinitely.
+            if (trayHwnd == IntPtr.Zero || !LocalPInvoke.IsWindow(trayHwnd))
+            {
+                trayHwnd = LocalPInvoke.FindWindowExA(taskbarHwnd, IntPtr.Zero, "TrayNotifyWnd", null);
+                if (trayHwnd == IntPtr.Zero)
+                {
+                    var name = new System.Text.StringBuilder(64);
+                    LocalPInvoke.GetClassName(taskbarHwnd, name, name.Capacity);
+                    if (name.ToString() == "Shell_SecondaryTrayWnd")
+                    {
+                        var first = LocalPInvoke.FindWindowExA(taskbarHwnd, IntPtr.Zero, "Windows.UI.Composition.DesktopWindowContentBridge", null);
+                        trayHwnd = LocalPInvoke.FindWindowExA(taskbarHwnd, first, "Windows.UI.Composition.DesktopWindowContentBridge", null);
+                    }
+                }
+            }
             LocalPInvoke.GetWindowRect(taskbarHwnd, out LocalPInvoke.RECT taskbarRectCheck);
             LocalPInvoke.GetWindowRect(trayHwnd, out LocalPInvoke.RECT trayRectCheck);
             LocalPInvoke.GetWindowRect(appListHwnd, out LocalPInvoke.RECT appListRectCheck);

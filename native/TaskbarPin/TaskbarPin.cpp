@@ -42,10 +42,11 @@ static bool __fastcall ShouldExpandHook(void* self, HWND bar, bool expanded) {
     return originalShouldExpand(self, bar, expanded);
 }
 
-static HMODULE ValidatedModule(const wchar_t* name, DWORD stamp, DWORD imageSize) {
+static HMODULE ValidatedModule(const wchar_t* name, DWORD stamp, DWORD imageSize, DWORD& error) {
+    error = ERROR_REVISION_MISMATCH;
     if (!name[0] || !std::wmemchr(name, L'\0', 64) || std::wcschr(name, L'\\') || std::wcschr(name, L'/')) return nullptr;
     auto handle = GetModuleHandleW(name);
-    if (!handle) return nullptr;
+    if (!handle) { error = ERROR_MOD_NOT_FOUND; return nullptr; }
     auto base = reinterpret_cast<const BYTE*>(handle);
     auto dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
     if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew <= 0 || dos->e_lfanew > 0x100000) return nullptr;
@@ -99,8 +100,9 @@ static DWORD WINAPI InitializeAndWatch(void* parameter) {
     if (shared && parent && WaitForSingleObject(parent, 0) == WAIT_TIMEOUT
         && shared->MagicValue == RoundedTBPin::Magic && shared->ProtocolVersion == RoundedTBPin::Version
         && shared->StructSize == sizeof(SharedConfig) && shared->ParentProcessId == parentId) {
-        auto taskbar = ValidatedModule(shared->TaskbarModule, shared->TaskbarTimeDateStamp, shared->TaskbarSizeOfImage);
-        auto view = ValidatedModule(shared->ViewModule, shared->ViewTimeDateStamp, shared->ViewSizeOfImage);
+        DWORD taskbarError, viewError;
+        auto taskbar = ValidatedModule(shared->TaskbarModule, shared->TaskbarTimeDateStamp, shared->TaskbarSizeOfImage, taskbarError);
+        auto view = ValidatedModule(shared->ViewModule, shared->ViewTimeDateStamp, shared->ViewSizeOfImage, viewError);
         auto hide = ExecutableRva(taskbar, shared->HideRva);
         auto secondary = shared->SecondaryAutoHideRva ? ExecutableRva(taskbar, shared->SecondaryAutoHideRva) : nullptr;
         auto shouldExpand = ExecutableRva(view, shared->ShouldExpandRva);
@@ -123,7 +125,7 @@ static DWORD WINAPI InitializeAndWatch(void* parameter) {
                     && MH_QueueEnableHook(shouldExpand) == MH_OK && MH_ApplyQueued() == MH_OK) installed = true;
             }
             error = ERROR_INVALID_FUNCTION;
-        } else error = ERROR_REVISION_MISMATCH;
+        } else error = !taskbar ? taskbarError : !view ? viewError : ERROR_REVISION_MISMATCH;
     } else if (!parent) error = GetLastError();
 
     if (installed) {

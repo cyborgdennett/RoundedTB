@@ -1,4 +1,4 @@
-param([string]$Installer = (Join-Path $PSScriptRoot '..\..\artifacts\installer\RoundedTB-Setup-1.0.1-win-x64.exe'))
+param([string]$Installer = (Join-Path $PSScriptRoot '..\..\artifacts\installer\RoundedTB-Setup-1.0.2-win-x64.exe'))
 $ErrorActionPreference = 'Stop'
 Add-Type @'
 using System.Runtime.InteropServices;

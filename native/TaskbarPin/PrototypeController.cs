@@ -156,7 +156,7 @@ public sealed class TaskbarPinController : IDisposable
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Start native pin prototype");
             var watch = Stopwatch.StartNew();
             while (Status == 0 && watch.ElapsedMilliseconds < 10000) Thread.Sleep(20);
-            if (Status != 1) throw new InvalidOperationException("Native initialization status=" + Status + ", error=" + Error);
+            if (Status != 1) throw new Win32Exception(unchecked((int)Error), "Native initialization status=" + Status + ", error=" + Error);
             if (!UnhookWindowsHookEx(hook)) throw new Win32Exception(Marshal.GetLastWin32Error(), "Remove temporary message hook");
             hook = IntPtr.Zero;
 #if !NET10_0_OR_GREATER

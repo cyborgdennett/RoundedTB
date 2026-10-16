@@ -122,6 +122,12 @@ namespace RoundedTB
 
                                 Taskbar.EnsureVisible(taskbars[current]);
                                 Types.Taskbar newTaskbar = Taskbar.GetQuickTaskbarRects(taskbars[current].TaskbarHwnd, taskbars[current].TrayHwnd, taskbars[current].AppListHwnd, effectiveSettings.IsWindows11 && effectiveSettings.IsDynamic);
+                                if (newTaskbar.TrayHwnd != taskbars[current].TrayHwnd)
+                                {
+                                    taskbars[current].TrayHwnd = newTaskbar.TrayHwnd;
+                                    taskbars[current].TrayRect = newTaskbar.TrayRect;
+                                    taskbars[current].Ignored = true;
+                                }
 
                                 newTaskbar.ScaleFactor = Math.Max(1, LocalPInvoke.GetDpiForWindow(newTaskbar.TaskbarHwnd) / 96.0);
                                 if (newTaskbar.ScaleFactor != taskbars[current].ScaleFactor)

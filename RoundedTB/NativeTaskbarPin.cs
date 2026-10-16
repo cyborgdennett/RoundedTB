@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.ComponentModel;
 using System.Linq;
 using System.Security.Cryptography;
 using Newtonsoft.Json.Linq;
@@ -28,7 +29,7 @@ internal sealed class NativeTaskbarPin : IDisposable
         }
     }
 
-    internal static NativeTaskbarPin TryStart(Action<string> log)
+    internal static NativeTaskbarPin TryStart(Action<string> log, Action symbolsReady = null, Action attachmentPending = null)
     {
         if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) return null;
         var callback = log;
@@ -38,9 +39,9 @@ internal sealed class NativeTaskbarPin : IDisposable
             string nativeDirectory = Path.Combine(AppContext.BaseDirectory, "Native");
             string source = Path.Combine(nativeDirectory, "RoundedTB.TaskbarPin.dll");
             string descriptors = Path.Combine(nativeDirectory, "symbols");
-            if (!File.Exists(source) || !Directory.Exists(descriptors))
+            if (!File.Exists(source))
             {
-                log?.Invoke("Native taskbar pin unavailable: packaged helper or symbol cache missing; using work-area fallback.");
+                log?.Invoke("Native taskbar pin unavailable: packaged helper missing; using work-area fallback.");
                 return null;
             }
             string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
@@ -49,7 +50,7 @@ internal sealed class NativeTaskbarPin : IDisposable
             var taskbar = ReadIdentity(taskbarPath);
             var view = ReadIdentity(viewPath);
             TaskbarPinController.Configuration? matching = null;
-            foreach (string descriptor in Directory.EnumerateFiles(descriptors, "*.json").OrderBy(path => path, StringComparer.Ordinal))
+            foreach (string descriptor in (Directory.Exists(descriptors) ? Directory.EnumerateFiles(descriptors, "*.json") : Array.Empty<string>()).OrderBy(path => path, StringComparer.Ordinal))
             {
                 try
                 {
@@ -63,8 +64,15 @@ internal sealed class NativeTaskbarPin : IDisposable
             }
             if (matching == null)
             {
-                log?.Invoke("Native taskbar pin unavailable for this exact Windows build; using work-area fallback.");
-                return null;
+                var taskbarModule = NativePdbSymbols.ReadModule(taskbarPath);
+                var viewModule = NativePdbSymbols.ReadModule(viewPath);
+                string cached = NativeTaskbarSymbols.ReadCached(taskbarModule, viewModule, NativeTaskbarSymbols.CacheDirectory);
+                if (cached != null) matching = ValidateDescriptor(cached, taskbar, view);
+                else
+                {
+                    NativeTaskbarSymbols.Prepare(taskbarModule, viewModule, log, symbolsReady);
+                    return null;
+                }
             }
             string hash;
             using (var stream = File.OpenRead(source)) hash = Convert.ToHexString(SHA256.HashData(stream));
@@ -82,6 +90,7 @@ internal sealed class NativeTaskbarPin : IDisposable
         catch (Exception error)
         {
             log?.Invoke("Native taskbar pin unavailable; using work-area fallback: " + error.Message);
+            if (error is Win32Exception { NativeErrorCode: 126 }) attachmentPending?.Invoke();
             return null;
         }
     }
